@@ -2,7 +2,6 @@ import pandas as pd
 from data import Transaction, Result
 from nbp_provider import NBPRateProvider
 from fifo import FIFO
-from datetime import datetime
 
 class TaxCalculator:
     POLISH_TAX_RATE = 0.19
@@ -68,14 +67,29 @@ class TaxCalculator:
             price_pln = tx.price * rate
 
             if "buy" in tx.action.lower():
-                memory.buy(tx.shares, price_pln)
+                memory.buy(tx.shares, price_pln, tx.time, rate)
             elif "sell" in tx.action.lower():
-                cost = memory.sell(tx.shares)
+                lot = memory.sell(tx.shares, price_pln, tx.time, rate)
                 if tx.year < self.tax_year:
                     continue
 
-                result.total_gain += tx.shares * price_pln
-                result.total_spend += cost
+                proceeds = tx.shares * price_pln
+                result.lots.append(lot)
+                result.total_gain += proceeds
+                result.total_spend += lot.cost_basis
+
+                consumed_lines = "\n".join(
+                    f"  {p.time} (rate {p.rate}): {p.shares} shares -> {p.shares * p.price:.2f} PLN"
+                    for p in lot.purchases
+                )
+                print(
+                    f"\nProcessed sale for {ticker} on {tx.time}\n"
+                    f"  Sale proceeds:    {lot.sale.shares} shares -> {proceeds:.2f} PLN\n"
+                    f"  --- Consumed from purchases (cost basis) ---\n"
+                    f"{consumed_lines}\n"
+                    f"  Total cost basis: {lot.cost_basis:.2f} PLN\n"
+                    f"  Capital result:   {proceeds - lot.cost_basis:.2f} PLN\n"
+                )
 
             elif "dividend" in tx.action.lower():
                 if tx.year < self.tax_year:

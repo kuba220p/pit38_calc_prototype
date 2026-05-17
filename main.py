@@ -4,7 +4,7 @@ from tax_report import TaxReport
 from transaction_loader import load_transactions
 
 def main(tax_year: int):
-    transactions = load_transactions(["INPUT"])
+    transactions = load_transactions(["C:/python/from_2025-01-01_to_2025-12-31_MTc3ODkyNjE2NTk5NA.csv", "C:/python/from_2024-07-08_to_2024-12-31_MTc3ODkyODQ2MTc5OQ.csv", "C:/python/from_2026-01-01_to_2026-05-17_MTc3OTAyMjMyMTExMQ.csv"])
     
     unique_currencies = list(pd.unique(transactions["Currency (Price / share)"]))
     transactions["Year"] = pd.to_datetime(transactions["Time"]).dt.year
@@ -18,6 +18,7 @@ def main(tax_year: int):
         report.add(result)
 
     report.print_summary()
+    report.build_pdf(f"./tax_report_{tax_year}.pdf")
 
 if __name__ == "__main__":
-    main(2025)
+    main(2026)

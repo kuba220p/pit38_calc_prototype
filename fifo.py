@@ -1,35 +1,32 @@
 from collections import deque
-from dataclasses import dataclass
-
-@dataclass
-class Allocation:
-    shares: float
-    price: float
+from data import Allocation, Lot, Consumed
 
 class FIFO:
     def __init__(self) -> None:
         self._storage: deque[Allocation] = deque()
 
-    def buy(self, shares: float, price: float) -> None:
-        self._storage.append(Allocation(shares, price))
+    def buy(self, shares: float, price: float, time: str, rate: float) -> None:
+        purchase = Allocation(action="BUY", shares=shares, price=price, time=time, rate=rate)
+        self._storage.append(purchase)
 
-    def sell(self, shares: float) -> float:
+    def sell(self, shares: float, price: float, time: str, rate: float) -> Lot:
+        sale = Allocation(action="SELL", shares=shares, price=price, time=time, rate=rate)
+        lot = Lot(purchases=[], sale=sale)
         shares_to_allocate = shares
-        current_sales_cost = 0
 
         while shares_to_allocate > 0:
             if not self._storage:
                 break
 
             oldest_purchase = self._storage[0]
-            if oldest_purchase.shares <= shares_to_allocate:
-                taken_shares = oldest_purchase.shares
-                current_sales_cost += taken_shares * oldest_purchase.price
-                shares_to_allocate -= taken_shares
+            taken = min(oldest_purchase.shares, shares_to_allocate)
+            
+            lot.purchases.append(Consumed(shares=taken, price=oldest_purchase.price, time=oldest_purchase.time, rate=oldest_purchase.rate))
+            shares_to_allocate -= taken
+        
+            if taken == oldest_purchase.shares:
                 self._storage.popleft()
             else:
-                current_sales_cost += shares_to_allocate * oldest_purchase.price
-                oldest_purchase.shares -= shares_to_allocate
-                shares_to_allocate = 0
+                oldest_purchase.shares -= taken
 
-        return current_sales_cost
+        return lot

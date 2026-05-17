@@ -56,7 +56,6 @@ class NBPRateProvider:
         cache_key = (currency, yesterday)
         cache_result = self._cache.get(cache_key, None)
         if cache_result:
-            print(f"Successfully retreived rate for {yesterday} from cache.")
             return cache_result
         
         result = self._check_previous_days(yesterday, currency)
@@ -66,8 +65,3 @@ class NBPRateProvider:
         cache_date, rate = result
         self._cache[(currency, cache_date)] = rate
         return rate        
-
-
-if __name__ == "__main__":
-    provider = NBPRateProvider.preload([2024, 2025], ["USD", "GBP"])
-    print(provider._cache)
